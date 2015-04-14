@@ -158,8 +158,7 @@ namespace IB_Multileg_Orders_Winforms_CS
         {
             lbErrors.Items.Add(e.errorCode + " " + e.errorMsg);
         }
-
-    } // end Form class
+     } // end Form class
 
     // My attempt to build a wrapper class around the IComboLeg Interface
     public class MyComboLeg : TWSLib.IComboLeg
