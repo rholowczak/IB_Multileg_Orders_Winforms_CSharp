@@ -17,6 +17,8 @@ namespace IB_Multileg_Orders_Winforms_CS
             InitializeComponent();
         }
 
+        protected System.Collections.ArrayList alOptionsSeries = new System.Collections.ArrayList();
+
         private void btnConnect_Click(object sender, EventArgs e)
         {
             // Connect to TWS
@@ -41,6 +43,7 @@ namespace IB_Multileg_Orders_Winforms_CS
             // Clear out the Data grid
             dgOptionsSeries.Rows.Clear();
             dgOptionsSeries.Refresh();
+            alOptionsSeries.Clear();
             // Create the contract object
             TWSLib.IContract optionSeries = axTws1.createContract();
             // Check the underlying symbol only
@@ -58,8 +61,12 @@ namespace IB_Multileg_Orders_Winforms_CS
             // This method will be called one time per contract
             // e.conId - ContractID
             // GridViewRowInfo rowInfo = dgOptionsSeries.Rows.AddNew();
-            dgOptionsSeries.Rows.Add(e.conId, e.symbol, e.expiry, e.strike, e.right);
-
+            // Only add if we already did not put this one in
+            if ( ! (alOptionsSeries.Contains(e.conId) ) )
+            {
+                dgOptionsSeries.Rows.Add(e.conId, e.symbol, e.expiry, e.strike, e.right);
+                alOptionsSeries.Add(e.conId);
+            }
         }
 
         private void label3_Click(object sender, EventArgs e)
@@ -89,14 +96,14 @@ namespace IB_Multileg_Orders_Winforms_CS
             // Place a combo order
             // At this point the two contract identifiers will be in text boxes
             // tbContractIDLeg1.Text and tbContractIDLeg2.Text
-            // Create a list of Combo Legs
+            // Create a list of Combo Legs. This is easily supported by the TWS ActiveX Control
             TWSLib.IComboLegList cllComboOrderLegs = axTws1.createComboLegList();
 
-            // Create Leg 1 of the order
-            MyComboLeg clLeg1 = new MyComboLeg();
-            
-            // Create Leg 2 of the order
-            MyComboLeg clLeg2 = new MyComboLeg();
+            // Create Leg 1 of the order (Do not initialize yet)
+            TWSLib.IComboLeg clLeg1;
+
+            // Create Leg 2 of the order (Do not initialize yet)
+            TWSLib.IComboLeg clLeg2;
 
             // Create the master order
             TWSLib.IOrder ordMasterOrder = axTws1.createOrder();
@@ -105,26 +112,21 @@ namespace IB_Multileg_Orders_Winforms_CS
             TWSLib.IContract cMasterContract = axTws1.createContract();
 
             // Fill in the Combo Leg information for Leg 1
-            clLeg1 = (MyComboLeg)cllComboOrderLegs.Add();
+            // Create the ComboLeg object
+            clLeg1 = (TWSLib.IComboLeg)cllComboOrderLegs.Add();
             clLeg1.conId = Convert.ToInt32(tbContractIDLeg1.Text);
             clLeg1.ratio = 1;
             clLeg1.action = "BUY";
             clLeg1.exchange = "SMART";
-            // Add to the list of combo legs
-            // This does not work either:
-            // cllComboOrderLegs.Add(clLeg1);
             
             // Fill in the Combo Leg information for Leg 2
-            clLeg2 = (MyComboLeg)cllComboOrderLegs.Add();
+            // Create the ComboLeg object
+            clLeg2 = (TWSLib.IComboLeg)cllComboOrderLegs.Add();
             clLeg2.conId = Convert.ToInt32(tbContractIDLeg2.Text);
             clLeg2.ratio = 1;
             clLeg2.action = "BUY";
             clLeg2.exchange = "SMART";
-            // Add to the list of combo legs
-            // This does not work:
-            // cllComboOrderLegs.Add(clLeg2);
             
-
             // Fill in the master contract
             cMasterContract.symbol = tbUnderlyingSymbol.Text;
             cMasterContract.secType = "BAG";
@@ -147,6 +149,7 @@ namespace IB_Multileg_Orders_Winforms_CS
             // Update the order status fields
             // e.id
             // e.parentId
+            //  e.remaining
             string strOrderStatus;
             strOrderStatus = e.id + " " + e.parentId + " " + e.status +
                 " " + e.filled + " " + e.lastFillPrice;
